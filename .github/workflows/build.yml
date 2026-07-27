@@ -22,7 +22,7 @@ jobs:
         run: |
           cd frontend
           npm install
-          npm run build
+          npx vite build0
 
       - name: Sync Capacitor with Android
         run: |
