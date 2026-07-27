@@ -18,11 +18,15 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install Frontend Dependencies & Build
+      - name: Install Frontend Dependencies
         run: |
           cd frontend
-          npm install
-          npx vite build0
+          npm install --no-audit --no-fund
+
+      - name: Build Frontend Production Assets
+        run: |
+          cd frontend
+          npx vite build
 
       - name: Sync Capacitor with Android
         run: |
