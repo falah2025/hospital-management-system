@@ -18,7 +18,26 @@ export const initializeMobile = async () => {
     // Hide splash screen
     await SplashScreen.hide({ fadeOutDuration: 500 });
 
-    // Push notifications setup
+    // Push notifications setup (disabled until Firebase is configured):
+    // Calling register() without google-services.json causes:
+    // java.lang.IllegalStateException: Default FirebaseApp is not initialized
+    await setupPushNotificationsSafe();
+  } catch (err) {
+    console.error("Mobile init error:", err);
+  }
+};
+
+/**
+ * Safe push notifications registration.
+ * Disabled by default because Firebase is not configured in the Android
+ * project yet (no google-services.json). Will crash on launch if called
+ * without it, so we guard it behind try-catch + an explicit flag.
+ */
+export const PUSH_NOTIFICATIONS_ENABLED = false;
+
+export const setupPushNotificationsSafe = async () => {
+  if (!PUSH_NOTIFICATIONS_ENABLED) return;
+  try {
     await PushNotifications.requestPermissions();
     await PushNotifications.register();
 
@@ -34,7 +53,7 @@ export const initializeMobile = async () => {
       });
     });
   } catch (err) {
-    console.error("Mobile init error:", err);
+    console.error("Push notifications setup failed (disabled):", err);
   }
 };
 
