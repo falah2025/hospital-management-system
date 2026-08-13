@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "../stores/authStore";
 import { api } from "../utils/api";
+import { useMockData } from "../hooks/useMockData";
 import { CreditCard, Search, DollarSign, Clock } from "lucide-react";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -21,7 +22,9 @@ export default function Billing() {
     enabled: !isOfflineMode,
     });
 
-  const invoices = data?.data || [];
+  const mock = useMockData();
+  const isOnline = !isOfflineMode && data?.data?.data;
+  const invoices = isOnline ? (data?.data?.data || []) : mock.invoices;
 
   return (
     <div className="space-y-6">
@@ -66,8 +69,6 @@ export default function Billing() {
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {isLoading && !isOfflineMode ? (
                 <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">جاري التحميل...</td></tr>
-              ) : isOfflineMode || isError ? (
-                <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">{isOfflineMode ? "أنت في الوضع المحلي — البيانات متاحة فقط عند الاتصال بسيرفر النظام" : "تعذر الاتصال بالسيرفر"}</td></tr>
               ) : invoices.length === 0 ? (
                 <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">لا يوجد فواتير</td></tr>
               ) : (
@@ -75,7 +76,7 @@ export default function Billing() {
                   <tr key={inv.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
                     <td className="px-6 py-4 font-mono text-sm text-gray-600 dark:text-gray-300">{inv.invoiceNumber}</td>
                     <td className="px-6 py-4">
-                      <p className="font-medium text-gray-900 dark:text-white">{inv.patient?.firstName} {inv.patient?.lastName}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{inv.patientName || `${inv.patient?.firstName || ""} ${inv.patient?.lastName || ""}`}</p>
                     </td>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">${inv.totalAmount}</td>
                     <td className="px-6 py-4 text-sm text-green-600">${inv.paidAmount}</td>

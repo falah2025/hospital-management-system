@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "../stores/authStore";
 import { api } from "../utils/api";
+import { useMockData } from "../hooks/useMockData";
 import { AlertTriangle, Clock, Activity, UserPlus } from "lucide-react";
 
 const triageConfig: Record<string, { label: string; color: string; priority: number }> = {
@@ -30,7 +31,9 @@ export default function Emergency() {
     enabled: !isOfflineMode,
     });
 
-  const visits = data?.data || [];
+  const mock = useMockData();
+  const isOnline = !isOfflineMode && data?.data?.data;
+  const visits = isOnline ? (data?.data?.data || []) : mock.emergencyVisits;
 
   return (
     <div className="space-y-6">
@@ -67,13 +70,6 @@ export default function Emergency() {
           <div className="col-span-2 flex items-center justify-center h-64">
             <div className="animate-spin w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full" />
           </div>
-        ) : isOfflineMode || isError ? (
-          <div className="col-span-2 flex flex-col items-center justify-center h-64 text-center px-4">
-            <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">
-              {isOfflineMode ? "أنت في الوضع المحلي (غير متصل بالسيرفر)" : "تعذر الاتصال بالسيرفر"}
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">البيانات متاحة فقط عند الاتصال بسيرفر النظام.</p>
-          </div>
         ) : visits.length === 0 ? (
           <div className="col-span-2 text-center py-12 text-gray-500">
             لا يوجد حالات طوارئ نشطة
@@ -92,7 +88,7 @@ export default function Emergency() {
                     </span>
                   </div>
                   <h3 className="font-semibold text-gray-900 dark:text-white mt-2">
-                    {visit.patient ? `${visit.patient.firstName} ${visit.patient.lastName}` : "مريض مجهول"}
+                    {visit.patientName || visit.patient ? `${visit.patientName || `${visit.patient.firstName} ${visit.patient.lastName}`}` : "مريض مجهول"}
                   </h3>
                   <p className="text-sm text-gray-500 mt-1">{visit.chiefComplaint}</p>
                 </div>

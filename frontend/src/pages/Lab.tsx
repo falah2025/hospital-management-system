@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "../stores/authStore";
 import { api } from "../utils/api";
+import { useMockData } from "../hooks/useMockData";
 import { FlaskConical, Search, Clock, CheckCircle } from "lucide-react";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -21,7 +22,12 @@ export default function Lab() {
     enabled: !isOfflineMode,
     });
 
-  const tests = data?.data || [];
+  const mock = useMockData();
+  const isOnline = !isOfflineMode && data?.data?.data;
+  const onlineTests: any[] = data?.data?.data || [];
+  const tests = isOnline
+    ? onlineTests
+    : mock.labTests.map((t) => ({ id: t.id, patientName: t.patientName, testName: t.testName, status: t.status, requestDate: t.orderedAt }));
 
   return (
     <div className="space-y-6">
@@ -58,16 +64,13 @@ export default function Lab() {
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {isLoading && !isOfflineMode ? (
                 <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">جاري التحميل...</td></tr>
-              ) : isOfflineMode || isError ? (
-                <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">{isOfflineMode ? "أنت في الوضع المحلي — البيانات متاحة فقط عند الاتصال بسيرفر النظام" : "تعذر الاتصال بالسيرفر"}</td></tr>
               ) : tests.length === 0 ? (
                 <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">لا يوجد فحوصات</td></tr>
               ) : (
                 tests.map((test: any) => (
                   <tr key={test.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
                     <td className="px-6 py-4">
-                      <p className="font-medium text-gray-900 dark:text-white">{test.patient?.firstName} {test.patient?.lastName}</p>
-                      <p className="text-xs text-gray-500">{test.patient?.patientNumber}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{test.patientName || `${test.patient?.firstName || ""} ${test.patient?.lastName || ""}`}</p>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
@@ -76,7 +79,7 @@ export default function Lab() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                      د. {test.doctor?.user?.firstName} {test.doctor?.user?.lastName}
+                      {test.doctorName || (isOnline ? `د. ${test.doctor?.user?.firstName || ""} ${test.doctor?.user?.lastName || ""}` : "—")}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {new Date(test.requestDate).toLocaleDateString("ar-SA")}

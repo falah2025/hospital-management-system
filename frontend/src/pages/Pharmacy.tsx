@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "../stores/authStore";
 import { api } from "../utils/api";
+import { useMockData } from "../hooks/useMockData";
 import { Pill, Search, AlertTriangle, Package } from "lucide-react";
 
 export default function Pharmacy() {
@@ -15,7 +16,11 @@ export default function Pharmacy() {
     enabled: !isOfflineMode,
     });
 
-  const medicines = data?.data || [];
+  const mock = useMockData();
+  const isOnline = !isOfflineMode && data?.data?.data;
+  let medicines = isOnline ? (data?.data?.data || []) : mock.medicines;
+  if (!isOnline && search) medicines = medicines.filter((m: any) => m.name.includes(search) || (m.genericName || "").includes(search));
+  if (!isOnline && showLowStock) medicines = medicines.filter((m: any) => m.stockQuantity <= m.reorderLevel);
 
   return (
     <div className="space-y-6">
@@ -65,8 +70,6 @@ export default function Pharmacy() {
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {isLoading && !isOfflineMode ? (
                 <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">جاري التحميل...</td></tr>
-              ) : isOfflineMode || isError ? (
-                <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">{isOfflineMode ? "أنت في الوضع المحلي — البيانات متاحة فقط عند الاتصال بسيرفر النظام" : "تعذر الاتصال بالسيرفر"}</td></tr>
               ) : medicines.length === 0 ? (
                 <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">لا يوجد أدوية</td></tr>
               ) : (
