@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { nativeStorage } from "./utils/mobile";
+import { nativeStorage } from "../utils/mobile";
 
 interface User {
   id: string;
