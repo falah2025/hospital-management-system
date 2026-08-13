@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuthStore } from "../stores/authStore";
 import { api } from "../utils/api";
 import { AlertTriangle, Clock, Activity, UserPlus } from "lucide-react";
 
@@ -22,10 +23,12 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 export default function Emergency() {
   const [status, setStatus] = useState("");
 
-  const { data, isLoading } = useQuery({
+    const isOfflineMode = useAuthStore((s) => s.isOfflineMode);
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["emergency", status],
     queryFn: () => api.get(`/emergency?status=${status}`),
-  });
+    enabled: !isOfflineMode,
+    });
 
   const visits = data?.data || [];
 
@@ -60,9 +63,16 @@ export default function Emergency() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {isLoading ? (
+        {isLoading && !isOfflineMode ? (
           <div className="col-span-2 flex items-center justify-center h-64">
             <div className="animate-spin w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full" />
+          </div>
+        ) : isOfflineMode || isError ? (
+          <div className="col-span-2 flex flex-col items-center justify-center h-64 text-center px-4">
+            <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">
+              {isOfflineMode ? "أنت في الوضع المحلي (غير متصل بالسيرفر)" : "تعذر الاتصال بالسيرفر"}
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">البيانات متاحة فقط عند الاتصال بسيرفر النظام.</p>
           </div>
         ) : visits.length === 0 ? (
           <div className="col-span-2 text-center py-12 text-gray-500">

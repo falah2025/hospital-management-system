@@ -1,42 +1,33 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
-import { api } from "../utils/api";
-import { useAuthStore } from "../stores/authStore";
+import { useAuthStore, loginWithFallback } from "../stores/authStore";
 import { Loader2, Stethoscope } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
-  const setAuth = useAuthStore((s) => s.setAuth);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
+  const [pending, setPending] = useState(false);
 
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: { email: string; password: string }) => {
-      const { data } = await api.post("/auth/login", credentials);
-      return data;
-    },
-    onSuccess: (data) => {
-      const roles = data.data.user.roles?.map((r: any) =>
-        typeof r.role === "string" ? r.role : r.role?.name
-      ) || [];
-      setAuth(
-        {
-          id: data.data.user.id,
-          email: data.data.user.email,
-          firstName: data.data.user.firstName,
-          lastName: data.data.user.lastName,
-          roles,
-        },
-        data.data.token
-      );
+  // Login with automatic mock-auth fallback when the backend is unreachable
+  const handleLogin = async (credentials: { email: string; password: string }) => {
+    setPending(true);
+    try {
+      const result = await loginWithFallback(credentials.email, credentials.password);
+      if (!result.success) {
+        throw new Error("INVALID_CREDENTIALS");
+      }
+      setOffline(result.offline);
       navigate("/");
-    },
-    onError: (err: any) => {
-      setError(err.response?.data?.message || "فشل تسجيل الدخول، تحقق من البيانات");
-    },
-  });
+    } catch {
+      setError("فشل تسجيل الدخول، تحقق من البيانات");
+      setOffline(false);
+    } finally {
+      setPending(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +36,7 @@ export default function Login() {
       setError("يرجى إدخال البريد الإلكتروني وكلمة المرور");
       return;
     }
-    loginMutation.mutate({ email, password });
+    handleLogin({ email, password });
   };
 
   return (
@@ -96,13 +87,19 @@ export default function Login() {
 
           <button
             type="submit"
-            disabled={loginMutation.isPending}
+            disabled={pending}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
           >
-            {loginMutation.isPending && <Loader2 size={18} className="animate-spin" />}
+            {pending && <Loader2 size={18} className="animate-spin" />}
             تسجيل الدخول
           </button>
         </form>
+
+        {offline && (
+          <p className="text-center text-xs text-amber-600 dark:text-amber-400 mt-4">
+            ⚠ أنت في الوضع المحلي (غير متصل بالسيرفر) — الحسابات التجريبية تعمل بدون إنترنت
+          </p>
+        )}
 
         <p className="text-center text-xs text-gray-400 mt-6">
           نظام متكامل لإدارة المستشفى — الإصدار 1.0

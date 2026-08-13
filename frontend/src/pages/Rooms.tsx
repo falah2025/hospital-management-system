@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useAuthStore } from "../stores/authStore";
 import { api } from "../utils/api";
 import { BedDouble, Users, CheckCircle, AlertCircle } from "lucide-react";
 
@@ -10,13 +11,27 @@ const statusConfig: Record<string, { label: string; color: string; icon: any }> 
 };
 
 export default function Rooms() {
-  const { data, isLoading } = useQuery({
+    const isOfflineMode = useAuthStore((s) => s.isOfflineMode);
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["rooms"],
     queryFn: () => api.get("/rooms"),
-  });
+    enabled: !isOfflineMode,
+    });
 
   const rooms = data?.data || [];
 
+  if (!isLoading && (isOfflineMode || isError)) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-center px-4">
+        <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">
+          {isOfflineMode ? "أنت في الوضع المحلي (غير متصل بالسيرفر)" : "تعذر الاتصال بالسيرفر"}
+        </p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          البيانات متاحة فقط عند الاتصال بسيرفر النظام.
+        </p>
+      </div>
+    );
+  }
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">

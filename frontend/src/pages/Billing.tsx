@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuthStore } from "../stores/authStore";
 import { api } from "../utils/api";
 import { CreditCard, Search, DollarSign, Clock } from "lucide-react";
 
@@ -13,10 +14,12 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 export default function Billing() {
   const [status, setStatus] = useState("");
 
-  const { data, isLoading } = useQuery({
+    const isOfflineMode = useAuthStore((s) => s.isOfflineMode);
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["invoices", status],
     queryFn: () => api.get(`/billing/invoices?status=${status}`),
-  });
+    enabled: !isOfflineMode,
+    });
 
   const invoices = data?.data || [];
 
@@ -61,8 +64,10 @@ export default function Billing() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {isLoading ? (
+              {isLoading && !isOfflineMode ? (
                 <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">جاري التحميل...</td></tr>
+              ) : isOfflineMode || isError ? (
+                <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">{isOfflineMode ? "أنت في الوضع المحلي — البيانات متاحة فقط عند الاتصال بسيرفر النظام" : "تعذر الاتصال بالسيرفر"}</td></tr>
               ) : invoices.length === 0 ? (
                 <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">لا يوجد فواتير</td></tr>
               ) : (

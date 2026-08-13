@@ -1,19 +1,30 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useAuthStore } from "../stores/authStore";
 import { api } from "../utils/api";
 import { ArrowRight, User, Calendar, FileText, Pill } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function PatientDetail() {
   const { id } = useParams();
+  const isOfflineMode = useAuthStore((s) => s.isOfflineMode);
   const { data } = useQuery({
     queryKey: ["patient", id],
     queryFn: () => api.get(`/patients/${id}`),
-  });
+    enabled: !isOfflineMode,
+    });
 
   const patient = data?.data;
 
   if (!patient) {
+    if (isOfflineMode) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64 text-center px-4">
+          <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">أنت في الوضع المحلي (غير متصل بالسيرفر)</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">تفاصيل المريض متاحة فقط عند الاتصال بسيرفر النظام.</p>
+        </div>
+      );
+    }
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full" />

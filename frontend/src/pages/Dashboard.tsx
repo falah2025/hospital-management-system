@@ -11,12 +11,15 @@ import {
   Pill,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuthStore } from "../stores/authStore";
 
 export default function Dashboard() {
-  const { data, isLoading } = useQuery({
+  const isOfflineMode = useAuthStore((s) => s.isOfflineMode);
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["dashboard", "stats"],
     queryFn: () => api.get("/dashboard/stats"),
     refetchInterval: 60000,
+    enabled: !isOfflineMode,
   });
 
   const stats = data?.data?.data?.overview || {};
@@ -83,10 +86,23 @@ export default function Dashboard() {
     },
   ];
 
-  if (isLoading) {
+  if (isLoading && !isOfflineMode) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (isOfflineMode || isError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-center px-4">
+        <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">
+          {isOfflineMode ? "أنت في الوضع المحلي (غير متصل بالسيرفر)" : "تعذر الاتصال بالسيرفر"}
+        </p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          بيانات لوحة التحكم متاحة فقط عند الاتصال بسيرفر النظام. يمكنك المتابعة عبر الصفحات الأخرى.
+        </p>
       </div>
     );
   }

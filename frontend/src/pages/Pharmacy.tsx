@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuthStore } from "../stores/authStore";
 import { api } from "../utils/api";
 import { Pill, Search, AlertTriangle, Package } from "lucide-react";
 
@@ -7,10 +8,12 @@ export default function Pharmacy() {
   const [search, setSearch] = useState("");
   const [showLowStock, setShowLowStock] = useState(false);
 
-  const { data, isLoading } = useQuery({
+    const isOfflineMode = useAuthStore((s) => s.isOfflineMode);
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["medicines", search, showLowStock],
     queryFn: () => api.get(`/pharmacy/medicines?search=${search}&lowStock=${showLowStock}`),
-  });
+    enabled: !isOfflineMode,
+    });
 
   const medicines = data?.data || [];
 
@@ -60,8 +63,10 @@ export default function Pharmacy() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {isLoading ? (
+              {isLoading && !isOfflineMode ? (
                 <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">جاري التحميل...</td></tr>
+              ) : isOfflineMode || isError ? (
+                <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">{isOfflineMode ? "أنت في الوضع المحلي — البيانات متاحة فقط عند الاتصال بسيرفر النظام" : "تعذر الاتصال بالسيرفر"}</td></tr>
               ) : medicines.length === 0 ? (
                 <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">لا يوجد أدوية</td></tr>
               ) : (

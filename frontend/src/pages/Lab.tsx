@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuthStore } from "../stores/authStore";
 import { api } from "../utils/api";
 import { FlaskConical, Search, Clock, CheckCircle } from "lucide-react";
 
@@ -13,10 +14,12 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 export default function Lab() {
   const [status, setStatus] = useState("");
 
-  const { data, isLoading } = useQuery({
+    const isOfflineMode = useAuthStore((s) => s.isOfflineMode);
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["lab-tests", status],
     queryFn: () => api.get(`/lab/tests?status=${status}`),
-  });
+    enabled: !isOfflineMode,
+    });
 
   const tests = data?.data || [];
 
@@ -53,8 +56,10 @@ export default function Lab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {isLoading ? (
+              {isLoading && !isOfflineMode ? (
                 <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">جاري التحميل...</td></tr>
+              ) : isOfflineMode || isError ? (
+                <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">{isOfflineMode ? "أنت في الوضع المحلي — البيانات متاحة فقط عند الاتصال بسيرفر النظام" : "تعذر الاتصال بالسيرفر"}</td></tr>
               ) : tests.length === 0 ? (
                 <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">لا يوجد فحوصات</td></tr>
               ) : (

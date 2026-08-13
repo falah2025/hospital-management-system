@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuthStore } from "../stores/authStore";
 import { api } from "../utils/api";
 import { Search, UserPlus, User } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -14,10 +15,12 @@ export default function Patients() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery({
+    const isOfflineMode = useAuthStore((s) => s.isOfflineMode);
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["patients", page, search],
     queryFn: () =>
       api.get("/patients", { params: { page, limit: 20, ...(search ? { search } : {}) } }),
+    enabled: !isOfflineMode,
   });
 
   const patients = data?.data?.data || [];
@@ -48,9 +51,14 @@ export default function Patients() {
         </div>
       </div>
 
-      {isLoading ? (
+      {isLoading && !isOfflineMode ? (
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+        </div>
+      ) : isOfflineMode || isError ? (
+        <div className="flex flex-col items-center justify-center h-64 text-center px-4">
+          <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">{isOfflineMode ? "أنت في الوضع المحلي (غير متصل بالسيرفر)" : "تعذر الاتصال بالسيرفر"}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">بيانات المرضى متاحة فقط عند الاتصال بسيرفر النظام.</p>
         </div>
       ) : patients.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-xl p-10 text-center border border-gray-100 dark:border-gray-700">
