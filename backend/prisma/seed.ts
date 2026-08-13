@@ -101,9 +101,42 @@ async function main() {
   }
 
   console.log("✅ Seeding completed!");
-  console.log("🔑 Default admin login:");
-  console.log("   Email: admin@hospital.com");
-  console.log("   Password: admin123");
+
+  // Create doctor user
+  const doctorPassword = await bcrypt.hash("doctor123", 12);
+  const doctorRole = await prisma.role.findUnique({ where: { name: "DOCTOR" } });
+  await prisma.user.upsert({
+    where: { email: "doctor@hospital.com" },
+    update: {},
+    create: {
+      email: "doctor@hospital.com",
+      password: doctorPassword,
+      firstName: "د. أحمد",
+      lastName: "محمد",
+      roles: { create: { roleId: doctorRole!.id } },
+    },
+  });
+
+  // Create receptionist user
+  const receptionistPassword = await bcrypt.hash("reception123", 12);
+  const receptionistRole = await prisma.role.findUnique({ where: { name: "RECEPTIONIST" } });
+  await prisma.user.upsert({
+    where: { email: "receptionist@hospital.com" },
+    update: {},
+    create: {
+      email: "receptionist@hospital.com",
+      password: receptionistPassword,
+      firstName: "سارة",
+      lastName: "الخالد",
+      roles: { create: { roleId: receptionistRole!.id } },
+    },
+  });
+
+  console.log("🔑 Default demo logins:");
+  // (printed after seeding all demo accounts)
+  console.log("   Admin:        admin@hospital.com        / admin123");
+  console.log("   Doctor:       doctor@hospital.com       / doctor123");
+  console.log("   Receptionist: receptionist@hospital.com / reception123");
 }
 
 main()
