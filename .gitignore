@@ -7,7 +7,6 @@ pnpm-lock.yaml
 # Build outputs
 dist/
 build/
-android/
 ios/
 
 # Environment
@@ -37,6 +36,15 @@ npm-debug.log*
 # Capacitor
 /android
 /ios
+
+# Exceptions: commit Capacitor Android project source (needed for APK builds)
+!frontend/android/capacitor.settings.gradle
+!frontend/android/gradle.properties
+!frontend/android/settings.gradle
+!frontend/android/build.gradle
+!frontend/android/app/build.gradle
+!frontend/android/app/capacitor.build.gradle
+!frontend/android/app/src/
 
 # Prisma
 prisma/migrations/
